@@ -67,7 +67,7 @@ jobs:
           context: ./backoffice-bff
           load: true
           push: false
-          tags: ghcr.io/${{ github.repository_owner }}/yas-backoffice-bff:latest
+          tags: ghcr.io/${{ env.OWNER_LC }}/yas-backoffice-bff:latest
 
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main'
@@ -79,4 +79,4 @@ jobs:
 
       - name: Push Docker Image
         if: github.ref == 'refs/heads/main'
-        run: docker push ghcr.io/${{ github.repository_owner }}/yas-backoffice-bff:latest
+        run: docker push ghcr.io/${{ env.OWNER_LC }}/yas-backoffice-bff:latest

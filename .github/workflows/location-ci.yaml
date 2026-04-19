@@ -78,7 +78,7 @@ jobs:
           context: ./location
           load: true
           push: false
-          tags: ghcr.io/${{ github.repository_owner }}/yas-location:latest
+          tags: ghcr.io/${{ env.OWNER_LC }}/yas-location:latest
 
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main'
@@ -90,4 +90,4 @@ jobs:
 
       - name: Push Docker Image
         if: github.ref == 'refs/heads/main'
-        run: docker push ghcr.io/${{ github.repository_owner }}/yas-location:latest
+        run: docker push ghcr.io/${{ env.OWNER_LC }}/yas-location:latest
