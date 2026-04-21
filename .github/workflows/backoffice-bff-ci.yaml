@@ -1,4 +1,4 @@
-﻿name: backoffice-bff service ci
+name: backoffice-bff service ci
 
 on:
   push:
@@ -13,7 +13,28 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ==========================================
+  # PHASE 0: CHECK CHANGES
+  # ==========================================
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backoffice-bff: ${{ steps.filter.outputs.backoffice-bff }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backoffice-bff:
+              - "backoffice-bff/**"
+
+  # ==========================================
+  # PHASE 1: TEST & REPORT
+  # ==========================================
   test:
+    needs: check-changes
+    if: needs.check-changes.outputs.backoffice-bff == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -36,8 +57,12 @@ jobs:
             backoffice-bff/target/surefire-reports/*.xml
             backoffice-bff/target/site/jacoco/
 
+  # ==========================================
+  # PHASE 2: BUILD & PUSH IMAGE
+  # ==========================================
   build:
-    needs: test
+    needs: [check-changes, test]
+    if: needs.check-changes.outputs.backoffice-bff == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

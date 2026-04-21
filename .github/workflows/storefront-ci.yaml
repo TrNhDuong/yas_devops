@@ -1,4 +1,4 @@
-﻿name: storefront service ci
+name: storefront service ci
 
 on:
   push:
@@ -12,7 +12,28 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ==========================================
+  # PHASE 0: CHECK CHANGES
+  # ==========================================
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      storefront: ${{ steps.filter.outputs.storefront }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            storefront:
+              - "storefront/**"
+
+  # ==========================================
+  # PHASE 1: TEST & REPORT
+  # ==========================================
   test:
+    needs: check-changes
+    if: needs.check-changes.outputs.storefront == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -46,8 +67,12 @@ jobs:
         continue-on-error: true
         working-directory: storefront
 
+  # ==========================================
+  # PHASE 2: BUILD & PUSH IMAGE
+  # ==========================================
   build:
-    needs: test
+    needs: [check-changes, test]
+    if: needs.check-changes.outputs.storefront == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

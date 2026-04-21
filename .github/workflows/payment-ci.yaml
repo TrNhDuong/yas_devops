@@ -1,4 +1,4 @@
-﻿name: payment service ci
+name: payment service ci
 
 on:
   push:
@@ -15,9 +15,27 @@ on:
 
 jobs:
   # ==========================================
+  # PHASE 0: CHECK CHANGES
+  # ==========================================
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      payment: ${{ steps.filter.outputs.payment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            payment:
+              - "payment/**"
+
+  # ==========================================
   # PHASE 1: TEST & REPORT (Moi nhanh)
   # ==========================================
   test:
+    needs: check-changes
+    if: needs.check-changes.outputs.payment == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -47,7 +65,8 @@ jobs:
   # ==========================================
   build:
     # Logic: Neu Test fail thi KHONG chay buoc nay
-    needs: test
+    needs: [check-changes, test]
+    if: needs.check-changes.outputs.payment == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
