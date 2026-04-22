@@ -1,18 +1,30 @@
-﻿name: storefront service ci
+name: storefront service ci
 
 on:
   push:
-    paths:
-      - "storefront/**"
-      - ".github/workflows/storefront-ci.yaml"
   pull_request:
-    paths:
-      - "storefront/**"
-      - ".github/workflows/storefront-ci.yaml"
   workflow_dispatch:
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      service: ${{ steps.filter.outputs.service }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            service:
+              - 'storefront/**'
+              - '.github/workflows/storefront-ci.yaml'
+
   test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -48,6 +60,7 @@ jobs:
 
   build:
     needs: test
+    if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -1,23 +1,31 @@
-﻿name: order service ci
+name: order service ci
 
 on:
   push:
-    # Requirement 4 & 6: Chay tren moi nhanh khi code trong folder service thay doi
-    paths:
-      - "order/**"
-      - ".github/workflows/order-ci.yaml"
-      - "pom.xml"
   pull_request:
-    paths:
-      - "order/**"
-      - ".github/workflows/order-ci.yaml"
   workflow_dispatch:
 
 jobs:
-  # ==========================================
-  # PHASE 1: TEST & REPORT (Moi nhanh)
-  # ==========================================
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      service: ${{ steps.filter.outputs.service }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            service:
+              - 'order/**'
+              - '.github/workflows/order-ci.yaml'
+              - 'pom.xml'
+
   test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -29,12 +37,10 @@ jobs:
         uses: ./.github/workflows/actions
 
       - name: Run Unit Tests & Generate JaCoCo Report
-        # Requirement 5: Chay test va do do phu
         run: mvn clean verify -pl order -am
 
       - name: Upload Test & Coverage Artifacts
         uses: actions/upload-artifact@v4
-        # Quan trong: Luon upload de co minh chung nop do an ke ca khi test fail
         if: always()
         with:
           name: order-test-coverage-reports
@@ -42,12 +48,9 @@ jobs:
             order/target/surefire-reports/*.xml
             order/target/site/jacoco/
 
-  # ==========================================
-  # PHASE 2: BUILD & PUSH IMAGE
-  # ==========================================
   build:
-    # Logic: Neu Test fail thi KHONG chay buoc nay
     needs: test
+    if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -60,7 +63,6 @@ jobs:
         uses: ./.github/workflows/actions
 
       - name: Build Package (Skip Tests)
-        # Vi da test o Phase 1 nen o day skip cho nhanh
         run: mvn clean package -pl order -am -DskipTests
 
       - name: Set up Docker Buildx
