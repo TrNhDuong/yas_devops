@@ -1,4 +1,4 @@
-name: Gitleaks Security Scanon:  
+name: Gitleaks Security Scanon 
 on: 
   push:    
     branches: [ "**" ]  
