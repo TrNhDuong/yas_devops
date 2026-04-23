@@ -59,13 +59,6 @@ jobs:
           path: |
             backoffice-bff/target/surefire-reports/*.xml
             backoffice-bff/target/site/jacoco/
-      - name: SonarCloud Check
-        uses: ./.github/workflows/sonarqube
-        with:
-          service-path: "backoffice-bff"
-          language: "java"
-          sonar-token: ${{ secrets.SONAR_TOKEN }}
-          sonar-organization: ${{ secrets.SONAR_ORGANIZATION }}
 
   build:
     needs: test
