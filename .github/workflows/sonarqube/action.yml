@@ -1,0 +1,45 @@
+name: SonarQube Analysis
+description: Run SonarQube scan and quality gate check for Java/Maven and Node/NextJS services
+
+inputs:
+  service-path:
+    description: "Path to the service directory"
+    required: true
+  language:
+    description: "Language of the service (java or node)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: SonarQube Scan Java
+      if: inputs.language == 'java'
+      shell: bash
+      working-directory: ${{ inputs.service-path }}
+      run: |
+        mvn sonar:sonar \
+          -Dsonar.token=$SONAR_TOKEN \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.organization=$SONAR_ORGANIZATION \
+          -Dsonar.projectKey=${SONAR_ORGANIZATION}_${{ inputs.service-path }} \
+          -Dsonar.sources=src/main/java \
+          -Dsonar.tests=src/test/java \
+          -Dsonar.java.coveragePlugin=jacoco \
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+          -Dsonar.qualitygate.wait=true
+
+    - name: SonarQube Scan Node
+      if: inputs.language == 'node'
+      uses: sonarsource/sonarqube-scan-action@master
+      with:
+        projectBaseDir: ${{ inputs.service-path }}
+        args: >
+          -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
+          -Dsonar.projectKey=${{ env.SONAR_ORGANIZATION }}_${{ inputs.service-path }}
+          -Dsonar.sources=.
+          -Dsonar.exclusions=node_modules/**,coverage/**,.next/**,public/**
+          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+          -Dsonar.qualitygate.wait=true
+      env:
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+        SONAR_HOST_URL: https://sonarcloud.io
