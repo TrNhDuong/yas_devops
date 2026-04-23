@@ -8,6 +8,12 @@ inputs:
   language:
     description: "Language of the service (java or node)"
     required: true
+  sonar-token:
+    description: "SonarCloud token"
+    required: true
+  sonar-organization:
+    description: "SonarCloud organization key"
+    required: true
 
 runs:
   using: "composite"
@@ -16,15 +22,12 @@ runs:
       if: inputs.language == 'java'
       shell: bash
       working-directory: ${{ inputs.service-path }}
-      env:
-        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
-        SONAR_ORGANIZATION: ${{ env.SONAR_ORGANIZATION }}
       run: |
         mvn sonar:sonar \
-          -Dsonar.token=$SONAR_TOKEN \
+          -Dsonar.token=${{ inputs.sonar-token }} \
           -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.organization=$SONAR_ORGANIZATION \
-          -Dsonar.projectKey=${SONAR_ORGANIZATION}_${{ inputs.service-path }} \
+          -Dsonar.organization=${{ inputs.sonar-organization }} \
+          -Dsonar.projectKey=${{ inputs.sonar-organization }}_${{ inputs.service-path }} \
           -Dsonar.java.coveragePlugin=jacoco \
           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
           -Dsonar.qualitygate.wait=true
@@ -35,12 +38,12 @@ runs:
       with:
         projectBaseDir: ${{ inputs.service-path }}
         args: >
-          -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
-          -Dsonar.projectKey=${{ env.SONAR_ORGANIZATION }}_${{ inputs.service-path }}
+          -Dsonar.organization=${{ inputs.sonar-organization }}
+          -Dsonar.projectKey=${{ inputs.sonar-organization }}_${{ inputs.service-path }}
           -Dsonar.sources=.
           -Dsonar.exclusions=node_modules/**,coverage/**,.next/**,public/**
           -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
           -Dsonar.qualitygate.wait=true
       env:
-        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+        SONAR_TOKEN: ${{ inputs.sonar-token }}
         SONAR_HOST_URL: https://sonarcloud.io

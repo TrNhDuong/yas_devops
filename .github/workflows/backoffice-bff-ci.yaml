@@ -52,6 +52,8 @@ jobs:
         with:
           service-path: "backoffice-bff"
           language: "java"
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          sonar-organization: ${{ secrets.SONAR_ORGANIZATION }}
 
   build:
     needs: test
