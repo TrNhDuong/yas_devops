@@ -16,6 +16,9 @@ runs:
       if: inputs.language == 'java'
       shell: bash
       working-directory: ${{ inputs.service-path }}
+      env:
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+        SONAR_ORGANIZATION: ${{ env.SONAR_ORGANIZATION }}
       run: |
         mvn sonar:sonar \
           -Dsonar.token=$SONAR_TOKEN \
