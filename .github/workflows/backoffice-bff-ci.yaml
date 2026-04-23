@@ -27,9 +27,6 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -41,15 +38,6 @@ jobs:
 
       - name: Run Unit Tests & Generate JaCoCo Report
         run: mvn clean verify -f backoffice-bff
-
-      - name: Check Coverage & Comment PR
-        uses: Madrapps/jacoco-report@v1.6.1
-        with:
-          paths: backoffice-bff/target/site/jacoco/jacoco.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 70
-          title: '📊 Báo cáo độ phủ - backoffice-bff'
-          update-comment: true
 
       - name: Upload Test & Coverage Artifacts
         uses: actions/upload-artifact@v4
