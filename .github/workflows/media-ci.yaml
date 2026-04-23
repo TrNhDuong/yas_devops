@@ -70,7 +70,7 @@ jobs:
           paths: media/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 10
-          title: ' Báo cáo độ phủ - Media Service'
+          title: 'Báo cáo độ phủ - Media Service'
           update-comment: true
 
       - name: Upload Test & Coverage Artifacts
