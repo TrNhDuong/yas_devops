@@ -51,6 +51,36 @@ jobs:
           title: "Payment Service - JaCoCo Coverage Report"
           update-comment: true
 
+      - name: Code Coverage Quality Gate (Console)
+        run: |
+          REPORT_CSV="payment/target/site/jacoco/jacoco.csv"
+          if [ -f "$REPORT_CSV" ]; then
+            awk -F"," 'NR>1 { missed += $4; covered += $5 } END {
+              if (missed+covered > 0) coverage = (covered/(missed+covered))*100
+              else coverage = 0
+              printf "===========================================\n"
+              printf " PAYMENT SERVICE COVERAGE: %.2f%%\n", coverage
+              printf "===========================================\n"
+              if (coverage < 10) {
+                printf " FAILED: Coverage thấp hơn mức tối thiểu 10%%\n"
+                exit 1
+              }
+            }' $REPORT_CSV
+          else
+            echo "::error::Không tìm thấy file jacoco.csv. Kiểm tra cấu hình jacoco-maven-plugin!"
+            exit 1
+          fi
+
+      - name: Add Coverage Report to PR
+        uses: Madrapps/jacoco-report@v1.6.1
+        if: github.event_name == 'pull_request'
+        with:
+          paths: payment/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 10
+          title: 'Báo cáo độ phủ - Payment Service'
+          update-comment: true
+
       - name: Upload Test & Coverage Artifacts
         uses: actions/upload-artifact@v4
         if: always()
