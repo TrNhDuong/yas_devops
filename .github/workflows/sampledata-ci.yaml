@@ -1,4 +1,4 @@
-﻿name: sampledata service ci
+name: sampledata service ci
 
 on:
   push:
@@ -29,6 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: write
+      checks: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -39,7 +41,27 @@ jobs:
         uses: ./.github/workflows/actions
 
       - name: Run Unit Tests & Generate JaCoCo Report
-        run: mvn clean verify -pl sampledata -am
+        run: mvn clean verify -pl sampledata -am -B
+
+      - name: Quality Gate (Console)
+        run: |
+          awk -F"," 'NR>1 { missed += $4; covered += $5 } END {
+            if (missed+covered > 0) {
+              pct = covered/(missed+covered)*100
+              printf "CURRENT COVERAGE: %.2f%%\n", pct
+              if (pct < 70) { print "FAIL: Coverage below 70%"; exit 1 }
+              else { print "PASS: Coverage meets threshold" }
+            } else { print "ERROR: No coverage data found"; exit 1 }
+          }' sampledata/target/site/jacoco/jacoco.csv
+
+      - name: Add Coverage Report to PR
+        uses: Madrapps/jacoco-report@v1.6.1
+        if: github.event_name == 'pull_request'
+        with:
+          paths: sampledata/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 70
+          title: '## 🔬 sampledata - Coverage Report'
 
       - name: Upload Test & Coverage Artifacts
         uses: actions/upload-artifact@v4
@@ -95,4 +117,3 @@ jobs:
       - name: Push Docker Image
         if: github.ref == 'refs/heads/main'
         run: docker push ghcr.io/${{ env.OWNER_LC }}/yas-sampledata:latest
-
