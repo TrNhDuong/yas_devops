@@ -2,31 +2,28 @@ name: payment service ci
 
 on:
   push:
+    branches: [ "main" ]
+    paths:
+      - "payment/**"
+      - ".github/workflows/actions/action.yaml"
+      - ".github/workflows/payment-ci.yaml"
+      - "pom.xml"
   pull_request:
+    branches: [ "main" ]
+    paths:
+      - "payment/**"
+      - ".github/workflows/actions/action.yaml"
+      - ".github/workflows/payment-ci.yaml"
+      - "pom.xml"
   workflow_dispatch:
 
 jobs:
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      service: ${{ steps.filter.outputs.service }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Detect changes
-        uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            service:
-              - 'payment/**'
-              - '.github/workflows/payment-ci.yaml'
-              - 'pom.xml'
-
   test:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -36,8 +33,23 @@ jobs:
       - name: Setup Java/Maven
         uses: ./.github/workflows/actions
 
-      - name: Run Unit Tests & Generate JaCoCo Report
-        run: mvn clean verify -pl payment -am
+      - name: Run Maven verify (Tests + JaCoCo)
+        run: mvn clean verify -pl payment -am -B
+
+      - name: Quality Gate - Check Coverage >= 70%
+        run: |
+          awk -F"," 'NR>1 { missed += $4; covered += $5 } END { if (missed+covered > 0) { pct = covered/(missed+covered)*100; printf "CURRENT COVERAGE: %.2f%%\n", pct; if (pct < 70) { print "COVERAGE BELOW 70% - FAILING BUILD"; exit 1 } else { print "Coverage OK" } } else { print "ERROR: No coverage data found"; exit 1 } }' payment/target/site/jacoco/jacoco.csv
+
+      - name: Add Coverage Report to PR
+        uses: Madrapps/jacoco-report@v1.6.1
+        if: github.event_name == 'pull_request'
+        with:
+          paths: ${{ github.workspace }}/payment/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 70
+          min-coverage-changed-files: 70
+          title: "Payment Service - JaCoCo Coverage Report"
+          update-comment: true
 
       - name: Upload Test & Coverage Artifacts
         uses: actions/upload-artifact@v4
@@ -50,7 +62,6 @@ jobs:
 
   build:
     needs: test
-    if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -63,7 +74,7 @@ jobs:
         uses: ./.github/workflows/actions
 
       - name: Build Package (Skip Tests)
-        run: mvn clean package -pl payment -am -DskipTests
+        run: mvn clean package -pl payment -am -DskipTests -B
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
