@@ -29,3 +29,8 @@ hs_err_pid*
 .settings*
 .vscode
 *.iml
+
+mvnw
+mvnw.cmd
+yy.md
+.mvn/
