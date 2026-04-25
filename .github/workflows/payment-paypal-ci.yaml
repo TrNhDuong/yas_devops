@@ -53,8 +53,8 @@ jobs:
               printf "===========================================\n"
               printf " PAYMENT-PAYPAL SERVICE COVERAGE: %.2f%%\n", coverage
               printf "===========================================\n"
-              if (coverage < 10) {
-                printf " FAILED: Coverage thấp hơn mức tối thiểu 10%%\n"
+              if (coverage < 70) {
+                printf " FAILED: Coverage thấp hơn mức tối thiểu 70%%\n"
                 exit 1
               }
             }' $REPORT_CSV
@@ -69,7 +69,7 @@ jobs:
         with:
           paths: payment-paypal/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 10
+          min-coverage-overall: 70
           title: 'Báo cáo độ phủ - Payment Paypal Service'
           update-comment: true
 
