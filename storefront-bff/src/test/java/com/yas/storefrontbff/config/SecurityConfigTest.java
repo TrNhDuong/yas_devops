@@ -2,7 +2,6 @@ package com.yas.storefrontbff.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.yas.storefrontbff.config.SecurityConfig;
 import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +57,7 @@ class SecurityConfigTest {
         Collection<GrantedAuthority> authorities = securityConfig.generateAuthoritiesFromClaim(roles);
 
         assertThat(authorities).extracting(GrantedAuthority::getAuthority)
+            .isNotEmpty()
             .allMatch(auth -> auth.startsWith("ROLE_"));
     }
 
