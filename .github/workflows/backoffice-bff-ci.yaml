@@ -41,7 +41,32 @@ jobs:
         uses: ./.github/workflows/actions
 
       - name: Run Unit Tests & Generate JaCoCo Report
-        run: mvn clean verify -f backoffice-bff
+        run: mvn clean verify -pl backoffice-bff -am -B
+
+      - name: Quality Gate - Check Coverage >= 70%
+        run: |
+          JACOCO_CSV=backoffice-bff/target/site/jacoco/jacoco.csv
+          if [ ! -f "$JACOCO_CSV" ]; then
+            echo "ERROR: jacoco.csv not found at $JACOCO_CSV"
+            exit 1
+          fi
+          COVERAGE=$(awk -F"," 'NR>1 { missed += $4; covered += $5 } END { if (missed+covered > 0) printf "%.2f", covered/(missed+covered)*100; else print "0" }' "$JACOCO_CSV")
+          echo "CURRENT COVERAGE: ${COVERAGE}%"
+          PASS=$(echo "$COVERAGE >= 70" | bc -l)
+          if [ "$PASS" -ne 1 ]; then
+            echo "FAILED: Coverage ${COVERAGE}% is below the required 70% threshold."
+            exit 1
+          fi
+          echo "PASSED: Coverage ${COVERAGE}% meets the required 70% threshold."
+
+      - name: Add Coverage Report to PR
+        uses: Madrapps/jacoco-report@v1.6.1
+        if: github.event_name == 'pull_request'
+        with:
+          paths: backoffice-bff/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 70
+          title: 'backoffice-bff Coverage Report'
 
       - name: Code Coverage Quality Gate (Console)
         run: |
@@ -127,4 +152,3 @@ jobs:
       - name: Push Docker Image
         if: github.ref == 'refs/heads/main'
         run: docker push ghcr.io/${{ env.OWNER_LC }}/yas-backoffice-bff:latest
-
