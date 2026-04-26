@@ -66,36 +66,7 @@ jobs:
           paths: backoffice-bff/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 70
-          title: 'backoffice-bff Coverage Report'
-
-      - name: Code Coverage Quality Gate (Console)
-        run: |
-          REPORT_CSV="backoffice-bff/target/site/jacoco/jacoco.csv"
-          if [ -f "$REPORT_CSV" ]; then
-            awk -F"," 'NR>1 { missed += $4; covered += $5 } END {
-              if (missed+covered > 0) coverage = (covered/(missed+covered))*100
-              else coverage = 0
-              printf "===========================================\n"
-              printf " BACKOFFICE-BFF SERVICE COVERAGE: %.2f%%\n", coverage
-              printf "===========================================\n"
-              if (coverage < 70) {
-                printf " FAILED: Coverage thấp hơn mức tối thiểu 70%%\n"
-                exit 1
-              }
-            }' $REPORT_CSV
-          else
-            echo "::error::Không tìm thấy file jacoco.csv. Kiểm tra cấu hình jacoco-maven-plugin!"
-            exit 1
-          fi
-
-      - name: Add Coverage Report to PR
-        uses: Madrapps/jacoco-report@v1.6.1
-        if: github.event_name == 'pull_request'
-        with:
-          paths: backoffice-bff/target/site/jacoco/jacoco.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 70
-          title: 'Báo cáo độ phủ - Backoffice BFF Service'
+          title: 'Backoffice BFF Coverage Report'
           update-comment: true
 
       - name: Upload Test & Coverage Artifacts
@@ -107,8 +78,52 @@ jobs:
             backoffice-bff/target/surefire-reports/*.xml
             backoffice-bff/target/site/jacoco/
 
-  build:
+  # ------------------------------------------------------------------ #
+  # Job Security: Gitleaks + SonarCloud                                 #
+  # ------------------------------------------------------------------ #
+  security:
     needs: test
+    if: needs.detect-changes.outputs.service == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ---------------------------------------------------------------- #
+      # SonarCloud: quét chất lượng code + bảo mật                      #
+      # ---------------------------------------------------------------- #
+      - name: Setup Java/Maven
+        uses: ./.github/workflows/actions
+
+      - name: Download Test & Coverage Artifacts (từ job test)
+        uses: actions/download-artifact@v4
+        with:
+          name: backoffice-bff-test-coverage-reports
+          path: backoffice-bff/target/site/jacoco/
+
+      - name: SonarCloud Scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn sonar:sonar \
+            -pl backoffice-bff -am \
+            -DskipTests -DskipITs \
+            -Dsonar.projectKey=TrNhDuong_yas_devops \
+            -Dsonar.organization=trnhduong \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -B --no-transfer-progress
+
+  build:
+    needs: security
     if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
     permissions:
