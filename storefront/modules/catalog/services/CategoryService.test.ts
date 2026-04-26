@@ -51,7 +51,9 @@ describe('CategoryService', () => {
 
     const result = await getCategoriesSuggestions();
 
-    expect(mockedApiClient.get).toHaveBeenCalledWith('/api/product/storefront/categories/suggestions');
+    expect(mockedApiClient.get).toHaveBeenCalledWith(
+      '/api/product/storefront/categories/suggestions'
+    );
     expect(result).toEqual(responseJson);
   });
 });
