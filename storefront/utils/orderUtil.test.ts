@@ -1,8 +1,4 @@
-import {
-  getDeliveryMethodTitle,
-  getDeliveryStatusTitle,
-  getOrderStatusTitle,
-} from './orderUtil';
+import { getDeliveryMethodTitle, getDeliveryStatusTitle, getOrderStatusTitle } from './orderUtil';
 import { EDeliveryMethod } from '@/modules/order/models/EDeliveryMethod';
 import { EDeliveryStatus } from '@/modules/order/models/EDeliveryStatus';
 import { EOrderStatus } from '@/modules/order/models/EOrderStatus';
