@@ -28,4 +28,10 @@ hs_err_pid*
 .project
 .settings*
 .vscode
+.metals
 *.iml
+
+mvnw
+mvnw.cmd
+yy.md
+.mvn/
