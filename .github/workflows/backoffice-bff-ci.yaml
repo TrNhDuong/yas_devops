@@ -107,6 +107,9 @@ jobs:
           name: backoffice-bff-test-coverage-reports
           path: backoffice-bff/target/site/jacoco/
 
+      - name: Compile
+        run: mvn compile -pl backoffice-bff -am -DskipTests -B --no-transfer-progress
+
       - name: SonarCloud Scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -119,6 +122,7 @@ jobs:
             -Dsonar.organization=trnhduong \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.java.binaries=backoffice-bff/target/classes \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -B --no-transfer-progress
 
