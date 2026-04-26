@@ -89,7 +89,7 @@ jobs:
 
       - name: Add Coverage Report to PR
         if: github.event_name == 'pull_request'
-        uses: AthleticNet/comment-test-coverage@v1.2.2
+        uses: AthleticNet/comment-test-coverage@1.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: storefront/coverage/coverage-summary.json
