@@ -57,11 +57,6 @@ jobs:
         run: npx prettier --check .
         working-directory: backoffice
 
-      - name: Security Audit
-        run: npm audit --omit=dev
-        continue-on-error: true
-        working-directory: backoffice
-
       - name: Run Unit Tests & Generate Coverage Report
         run: npm run test:coverage -- --ci
         working-directory: backoffice
@@ -103,9 +98,53 @@ jobs:
           name: backoffice-coverage-report
           path: backoffice/coverage/
 
+  security:
+    needs:
+      - detect-changes
+      - test
+    if: needs.detect-changes.outputs.service == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download Test & Coverage Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: backoffice-coverage-report
+          path: backoffice/coverage/
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: backoffice
+          args: >
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.sources=common,constants,modules,pages,utils
+            -Dsonar.tests=__tests__
+            -Dsonar.test.inclusions=__tests__/**/*.test.ts,__tests__/**/*.test.tsx
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.exclusions=coverage/**,node_modules/**,public/**,.next/**
+
 
   build:
-    needs: test
+    needs:
+      - detect-changes
+      - security
     if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
     permissions:
