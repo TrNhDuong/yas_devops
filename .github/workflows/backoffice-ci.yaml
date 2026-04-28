@@ -134,6 +134,8 @@ jobs:
           projectBaseDir: backoffice
           args: >
             -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.organization=trnhduong
+            -Dsonar.projectKey=TrNhDuong_yas_devops 
             -Dsonar.sources=common,constants,modules,pages,utils
             -Dsonar.tests=__tests__
             -Dsonar.test.inclusions=__tests__/**/*.test.ts,__tests__/**/*.test.tsx
