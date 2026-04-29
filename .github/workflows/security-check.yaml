@@ -70,10 +70,8 @@ jobs:
       - name: Run Snyk scan for entire project
         run: |
           snyk test \
-            --severity-threshold=${{ inputs.SNYK_SEVERITY || 'high' }} \
-            --all-projects \
-            --detection-depth=2 \
-            --maven-aggregate-project
+            --file=pom.xml \
+            --severity-threshold=${{ inputs.SNYK_SEVERITY || 'high' }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           JAVA_OPTS: "-Xmx1g -Xms512m"
@@ -84,10 +82,8 @@ jobs:
         if: always()
         run: |
           snyk test \
+            --file=pom.xml \
             --severity-threshold=${{ inputs.SNYK_SEVERITY || 'high' }} \
-            --all-projects \
-            --detection-depth=2 \
-            --maven-aggregate-project \
             --json > snyk-report.json || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
