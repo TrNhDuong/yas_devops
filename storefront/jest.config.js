@@ -23,7 +23,7 @@ const customJestConfig = {
     'utils/orderUtil.ts',
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'json-summary', 'cobertura'],
+  coverageReporters: ['text', 'json-summary', 'cobertura', 'lcov'],
 };
 
 module.exports = createJestConfig(customJestConfig);
