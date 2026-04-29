@@ -35,3 +35,4 @@ mvnw
 mvnw.cmd
 yy.md
 .mvn/
+.metals/
