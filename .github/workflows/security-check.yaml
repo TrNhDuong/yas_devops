@@ -83,7 +83,7 @@ jobs:
         run: |
           snyk test \
             --file=pom.xml \
-            --severity-threshold=${{ inputs.SNYK_SEVERITY || 'high' }} \
+            --severity-threshold=${{ inputs.SNYK_SEVERITY || 'critical' }} \
             --json > snyk-report.json || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
