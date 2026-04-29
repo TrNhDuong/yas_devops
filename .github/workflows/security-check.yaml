@@ -50,7 +50,6 @@ jobs:
   snyk:
     name: Snyk Security Scan
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.ENABLE_SNYK_SCAN == true }}
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
