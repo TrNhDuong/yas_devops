@@ -17,7 +17,7 @@ on:
       SNYK_SEVERITY:
         description: 'Snyk severity threshold (low, medium, high, critical)'
         required: false
-        default: 'high'
+        default: 'critical'
         type: choice
         options:
           - low
