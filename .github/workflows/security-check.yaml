@@ -72,11 +72,12 @@ jobs:
           snyk test \
             --severity-threshold=${{ inputs.SNYK_SEVERITY || 'high' }} \
             --all-projects \
-            --detection-depth=3
+            --detection-depth=2 \
+            --maven-aggregate-project
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          JAVA_OPTS: "-Xmx512m -Xms256m"
-          MAVEN_OPTS: "-Xmx512m -Xms256m"
+          JAVA_OPTS: "-Xmx1g -Xms512m"
+          MAVEN_OPTS: "-Xmx1g -Xms512m"
         continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.SNYK_FAIL_ON_ISSUES == false }}
 
       - name: Generate Snyk JSON report
@@ -85,12 +86,13 @@ jobs:
           snyk test \
             --severity-threshold=${{ inputs.SNYK_SEVERITY || 'high' }} \
             --all-projects \
-            --detection-depth=3 \
+            --detection-depth=2 \
+            --maven-aggregate-project \
             --json > snyk-report.json || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          JAVA_OPTS: "-Xmx512m -Xms256m"
-          MAVEN_OPTS: "-Xmx512m -Xms256m"
+          JAVA_OPTS: "-Xmx1g -Xms512m"
+          MAVEN_OPTS: "-Xmx1g -Xms512m"
 
       - name: Upload Snyk report artifact
         if: always()
