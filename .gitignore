@@ -35,4 +35,8 @@ mvnw
 mvnw.cmd
 yy.md
 .mvn/
+<<<<<<< HEAD
 .metals
+=======
+.metals/
+>>>>>>> develop

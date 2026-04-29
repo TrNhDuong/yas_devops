@@ -63,25 +63,16 @@ jobs:
           min-coverage-overall: 70
           title: '## 🔬 sampledata - Coverage Report'
 
-      - name: Code Coverage Quality Gate (Console)
+      - name: Quality Gate (Console)
         run: |
-          REPORT_CSV="sampledata/target/site/jacoco/jacoco.csv"
-          if [ -f "$REPORT_CSV" ]; then
-            awk -F"," 'NR>1 { missed += $4; covered += $5 } END {
-              if (missed+covered > 0) coverage = (covered/(missed+covered))*100
-              else coverage = 0
-              printf "===========================================\n"
-              printf " SAMPLEDATA SERVICE COVERAGE: %.2f%%\n", coverage
-              printf "===========================================\n"
-              if (coverage < 70) {
-                printf " FAILED: Coverage thấp hơn mức tối thiểu 70%%\n"
-                exit 1
-              }
-            }' $REPORT_CSV
-          else
-            echo "::error::Không tìm thấy file jacoco.csv. Kiểm tra cấu hình jacoco-maven-plugin!"
-            exit 1
-          fi
+          awk -F"," 'NR>1 { missed += $4; covered += $5 } END {
+            if (missed+covered > 0) {
+              pct = covered/(missed+covered)*100
+              printf "CURRENT COVERAGE: %.2f%%\n", pct
+              if (pct < 70) { print "FAIL: Coverage below 70%"; exit 1 }
+              else { print "PASS: Coverage meets threshold" }
+            } else { print "ERROR: No coverage data found"; exit 1 }
+          }' sampledata/target/site/jacoco/jacoco.csv
 
       - name: Add Coverage Report to PR
         uses: Madrapps/jacoco-report@v1.6.1
@@ -90,8 +81,7 @@ jobs:
           paths: sampledata/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 70
-          title: 'Báo cáo độ phủ - Sampledata Service'
-          update-comment: true
+          title: '## 🔬 sampledata - Coverage Report'
 
       - name: Upload Test & Coverage Artifacts
         uses: actions/upload-artifact@v4
@@ -102,8 +92,50 @@ jobs:
             sampledata/target/surefire-reports/*.xml
             sampledata/target/site/jacoco/
 
+  # ------------------------------------------------------------------ #
+  # Job Security: SonarCloud                                            #
+  # ------------------------------------------------------------------ #
+  security:
+    needs: [detect-changes, test]
+    if: needs.detect-changes.outputs.service == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java/Maven
+        uses: ./.github/workflows/actions
+
+      - name: Download Test & Coverage Artifacts (từ job test)
+        uses: actions/download-artifact@v4
+        with:
+          name: sampledata-test-coverage-reports
+          path: sampledata/target/site/jacoco/
+
+      - name: Compile & SonarCloud Scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn clean compile sonar:sonar \
+            -pl sampledata -am \
+            -DskipTests -DskipITs \
+            -Dsonar.projectKey=TrNhDuong_yas_devops \
+            -Dsonar.organization=trnhduong \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -B --no-transfer-progress
+
   build:
-    needs: test
+    needs: security
     if: needs.detect-changes.outputs.service == 'true'
     runs-on: ubuntu-latest
     permissions:
