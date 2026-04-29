@@ -1,13 +1,34 @@
-name: Gitleaks Security Scanon 
-on: 
-  push:    
-    branches: [ "**" ]  
-  pull_request:   
-    branches: [ "**" ]  
-  schedule:    
-    - cron: "0 0 * * *"  
+name: Security Scan
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+  schedule:
+    - cron: "0 0 * * *"
   workflow_dispatch:
-  
+    inputs:
+      ENABLE_SNYK_SCAN:
+        description: 'Enable Snyk Security Scan'
+        required: false
+        default: 'true'
+        type: boolean
+      SNYK_SEVERITY:
+        description: 'Snyk severity threshold (low, medium, high, critical)'
+        required: false
+        default: 'high'
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+          - critical
+      SNYK_FAIL_ON_ISSUES:
+        description: 'Fail pipeline if Snyk finds issues'
+        required: false
+        default: 'true'
+        type: boolean
 
 jobs:
   gitleaks:
@@ -40,7 +61,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '25'
+          java-version: '21'
           cache: maven
 
       - name: Set up Snyk CLI
@@ -49,19 +70,16 @@ jobs:
       - name: Run Snyk scan for entire project
         run: |
           snyk test \
-            --file=pom.xml \
-            --project-name=yas-monorepo \
             --severity-threshold=${{ inputs.SNYK_SEVERITY || 'high' }} \
             --all-projects
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.SNYK_FAIL_ON_ISSUES == false }}
 
-      - name: Upload Snyk report
+      - name: Generate Snyk JSON report
         if: always()
         run: |
           snyk test \
-            --file=pom.xml \
-            --project-name=yas-monorepo \
             --severity-threshold=${{ inputs.SNYK_SEVERITY || 'high' }} \
             --all-projects \
             --json > snyk-report.json || true
