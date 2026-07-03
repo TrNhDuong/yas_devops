@@ -8,27 +8,23 @@ metadata:
     app.kubernetes.io/environment: staging
 spec:
   project: yas
-
   sources:
-    - repoURL: https://github.com/TrNhDuong/yas_devops.git
-      targetRevision: main
-      path: k8s/charts/yas-configuration
-      helm:
-        releaseName: yas-configuration
-        valueFiles:
-          - $values/k8s/environments/staging/yas-configuration-values.yaml
-
-    - repoURL: https://github.com/TrNhDuong/yas_devops.git
-      targetRevision: main
-      ref: values
-
+  - repoURL: https://github.com/TrNhDuong/yas_devops.git
+    targetRevision: main
+    path: k8s/charts/yas-configuration
+    helm:
+      releaseName: yas-configuration
+      valueFiles:
+      - $values/k8s/environments/staging/yas-configuration-values.yaml
+  - repoURL: https://github.com/TrNhDuong/yas_devops.git
+    targetRevision: main
+    ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: yas-staging
-
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
+    - CreateNamespace=true

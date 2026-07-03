@@ -1,0 +1,14 @@
+# This file is used by ArgoCD. CI updates image.tag after pushing a new image.
+backend:
+  image:
+    repository: nguyenmanhha/yas-storefront-bff
+    tag: main
+    pullPolicy: Always
+  ingress:
+    enabled: true
+    host: storefront-staging.yas.local.com
+  extraEnvs:
+  - name: SPRING_PROFILES_ACTIVE
+    value: prod
+  - name: UI_HOST
+    value: http://storefront-ui:3000

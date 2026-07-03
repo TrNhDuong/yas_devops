@@ -1,0 +1,6 @@
+# This file is used by ArgoCD. CI updates image.tag after pushing a new image.
+backend:
+  image:
+    repository: nguyenmanhha/yas-search
+    tag: main
+    pullPolicy: Always

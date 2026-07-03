@@ -1,0 +1,11 @@
+# This file is used by ArgoCD. CI updates image.tag after pushing a new image.
+ui:
+  image:
+    repository: nguyenmanhha/yas-storefront
+    tag: main
+    pullPolicy: Always
+  extraEnvs:
+  - name: API_BASE_PATH
+    value: http://storefront-staging.yas.local.com/api
+  ingress:
+    enabled: false
