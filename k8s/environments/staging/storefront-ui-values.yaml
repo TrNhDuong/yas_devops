@@ -1,0 +1,3 @@
+extraEnv:
+  - name: API_BASE_PATH
+    value: http://storefront.staging.yas.local.com/api

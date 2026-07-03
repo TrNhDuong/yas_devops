@@ -6,7 +6,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: api.yas.local.com
+    - host: {{ .Values.hosts.api | quote }}
       http:
         paths:
           - path: /product

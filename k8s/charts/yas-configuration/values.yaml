@@ -310,3 +310,6 @@ reloader:
   fullnameOverride: "yas-reloader"
   reloader:
     watchGlobally: false
+
+hosts:
+  api: api.yas.local.com
