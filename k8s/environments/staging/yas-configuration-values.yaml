@@ -1,0 +1,9 @@
+# Environment-specific overrides for yas-configuration.
+# Keycloak/infra endpoints are kept shared by default.
+mediaApplicationConfig:
+  yas:
+    publicUrl: http://api-staging.yas.local.com/media
+paymentPaypalApplicationConfig:
+  yas:
+    public:
+      url: http://storefront-staging.yas.local.com/complete-payment
