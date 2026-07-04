@@ -8,38 +8,53 @@ data:
     server {
       listen 80;
 
+      location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+      }
+
+      location = / {
+        access_log off;
+        return 200 "ok\n";
+      }
+
+      # Storefront calls /api/<service>/... through storefront-bff.
+      # Backend services in YAS keep their own context path, so nginx rewrites:
+      # /api/product/... -> /product/...
+      # /api/cart/...    -> /cart/...
+
       location ~ ^/api/product/?(.*)$ {
-        rewrite ^/api/product/?(.*)$ /$1 break;
+        rewrite ^/api/product/?(.*)$ /product/$1 break;
         proxy_pass http://product;
       }
 
       location ~ ^/api/cart/?(.*)$ {
-        rewrite ^/api/cart/?(.*)$ /$1 break;
+        rewrite ^/api/cart/?(.*)$ /cart/$1 break;
         proxy_pass http://cart;
       }
 
       location ~ ^/api/customer/?(.*)$ {
-        rewrite ^/api/customer/?(.*)$ /$1 break;
+        rewrite ^/api/customer/?(.*)$ /customer/$1 break;
         proxy_pass http://customer;
       }
 
       location ~ ^/api/inventory/?(.*)$ {
-        rewrite ^/api/inventory/?(.*)$ /$1 break;
+        rewrite ^/api/inventory/?(.*)$ /inventory/$1 break;
         proxy_pass http://inventory;
       }
 
       location ~ ^/api/media/?(.*)$ {
-        rewrite ^/api/media/?(.*)$ /$1 break;
+        rewrite ^/api/media/?(.*)$ /media/$1 break;
         proxy_pass http://media;
       }
 
       location ~ ^/api/order/?(.*)$ {
-        rewrite ^/api/order/?(.*)$ /$1 break;
+        rewrite ^/api/order/?(.*)$ /order/$1 break;
         proxy_pass http://order;
       }
 
       location ~ ^/api/tax/?(.*)$ {
-        rewrite ^/api/tax/?(.*)$ /$1 break;
+        rewrite ^/api/tax/?(.*)$ /tax/$1 break;
         proxy_pass http://tax;
       }
     }
@@ -49,24 +64,45 @@ kind: Deployment
 metadata:
   name: nginx
   namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: internal-nginx
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nginx
+      app.kubernetes.io/name: internal-nginx
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: nginx
+        app.kubernetes.io/name: internal-nginx
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: nginx
           image: nginx:1.27-alpine
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
+            - name: http
+              containerPort: 80
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
       volumes:
         - name: nginx-config
           configMap:
@@ -77,11 +113,15 @@ kind: Service
 metadata:
   name: nginx
   namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: internal-nginx
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   type: ClusterIP
   selector:
-    app: nginx
+    app.kubernetes.io/name: internal-nginx
+    app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
     - name: http
       port: 80
-      targetPort: 80
+      targetPort: http

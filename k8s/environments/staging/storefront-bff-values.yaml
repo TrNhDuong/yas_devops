@@ -1,2 +1,8 @@
-ingress:
-  host: storefront.staging.yas.local.com
+backend:
+  image:
+    repository: nguyenmanhha/yas-storefront-bff
+    tag: main
+
+  ingress:
+    enabled: true
+    host: storefront.staging.yas.local.com

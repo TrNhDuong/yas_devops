@@ -1,7 +1,7 @@
 backend:
   image:
     repository: nguyenmanhha/yas-storefront-bff
-    tag: latest
+    tag: main
 
   nameOverride: storefront-bff
   fullnameOverride: storefront-bff
@@ -12,7 +12,7 @@ backend:
 
   ingress:
     enabled: true
-    host: {{ .Values.ingress.host | quote }}
+    host: storefront.yas.local.com
     path: /
 
   extraEnvs:
