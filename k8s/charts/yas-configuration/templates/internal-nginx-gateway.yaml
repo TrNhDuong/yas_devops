@@ -18,10 +18,12 @@ data:
         return 200 "ok\n";
       }
 
-      # Storefront calls /api/<service>/... through storefront-bff.
-      # Backend services in YAS keep their own context path, so nginx rewrites:
-      # /api/product/... -> /product/...
-      # /api/cart/...    -> /cart/...
+      # Storefront/backoffice calls /api/<service>/...
+      # Internal nginx rewrites:
+      # /api/product/...    -> /product/...
+      # /api/cart/...       -> /cart/...
+      # /api/search/...     -> /search/...
+      # /api/sampledata/... -> /sampledata/...
 
       location ~ ^/api/product/?(.*)$ {
         rewrite ^/api/product/?(.*)$ /product/$1 break;
@@ -56,6 +58,16 @@ data:
       location ~ ^/api/tax/?(.*)$ {
         rewrite ^/api/tax/?(.*)$ /tax/$1 break;
         proxy_pass http://tax;
+      }
+
+      location ~ ^/api/search/?(.*)$ {
+        rewrite ^/api/search/?(.*)$ /search/$1 break;
+        proxy_pass http://search;
+      }
+
+      location ~ ^/api/sampledata/?(.*)$ {
+        rewrite ^/api/sampledata/?(.*)$ /sampledata/$1 break;
+        proxy_pass http://sampledata;
       }
     }
 ---
