@@ -1,4 +1,4 @@
-name: location service ci
+﻿name: location service ci
 
 on:
   push:
@@ -53,13 +53,13 @@ jobs:
               printf "===========================================\n"
               printf " LOCATION SERVICE COVERAGE: %.2f%%\n", coverage
               printf "===========================================\n"
-              if (coverage < 10) {
-                printf " FAILED: Coverage thấp hơn mức tối thiểu 10%%\n"
+              if (coverage < 70) {
+                printf " FAILED: Coverage tháº¥p hÆ¡n má»©c tá»‘i thiá»ƒu 70%%\n"
                 exit 1
               }
             }' $REPORT_CSV
           else
-            echo "::error::Không tìm thấy file jacoco.csv. Kiểm tra cấu hình jacoco-maven-plugin!"
+            echo "::error::KhĂ´ng tĂ¬m tháº¥y file jacoco.csv. Kiá»ƒm tra cáº¥u hĂ¬nh jacoco-maven-plugin!"
             exit 1
           fi
 
@@ -69,8 +69,8 @@ jobs:
         with:
           paths: location/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 10
-          title: 'Báo cáo độ phủ - Location Service'
+          min-coverage-overall: 70
+          title: 'BĂ¡o cĂ¡o Ä‘á»™ phá»§ - Location Service'
           update-comment: true
 
       - name: Upload Test & Coverage Artifacts
@@ -82,9 +82,51 @@ jobs:
             location/target/surefire-reports/*.xml
             location/target/site/jacoco/
 
-  build:
-    needs: test
+  # ------------------------------------------------------------------ #
+  # Job Security: SonarCloud                                            #
+  # ------------------------------------------------------------------ #
+  security:
+    needs: [detect-changes, test]
     if: needs.detect-changes.outputs.service == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java/Maven
+        uses: ./.github/workflows/actions
+
+      - name: Download Test & Coverage Artifacts (from job test)
+        uses: actions/download-artifact@v4
+        with:
+          name: location-test-coverage-reports
+          path: location/target/site/jacoco/
+
+      - name: Compile & SonarCloud Scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn clean compile sonar:sonar \
+            -pl location -am \
+            -DskipTests -DskipITs \
+            -Dsonar.projectKey=TrNhDuong_yas_devops \
+            -Dsonar.organization=trnhduong \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -B --no-transfer-progress
+
+  build:
+    needs: [detect-changes, security]
+    if: needs.detect-changes.outputs.service == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -99,31 +141,10 @@ jobs:
       - name: Build Package (Skip Tests)
         run: mvn clean package -pl location -am -DskipTests
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Lowercase Repository Owner
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-        env:
-          OWNER: '${{ github.repository_owner }}'
-
-      - name: Build Docker Image
-        uses: docker/build-push-action@v6
+      - name: Build and push Docker image to Docker Hub
+        uses: ./.github/workflows/actions/docker-build-push
         with:
           context: ./location
-          load: true
-          push: false
-          tags: ghcr.io/${{ env.OWNER_LC }}/yas-location:latest
-
-      - name: Log in to GHCR
-        if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push Docker Image
-        if: github.ref == 'refs/heads/main'
-        run: docker push ghcr.io/${{ env.OWNER_LC }}/yas-location:latest
+          image-name: yas-location
+          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
