@@ -56,4 +56,4 @@ const CustomerCreate: NextPage = () => {
   );
 };
 
-export default  CustomerCreate;
+export default CustomerCreate;
