@@ -1,0 +1,7 @@
+ui:
+  image:
+    repository: nguyenmanhha/yas-backoffice
+    tag: main
+
+  ingress:
+    enabled: false

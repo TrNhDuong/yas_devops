@@ -61,7 +61,7 @@ jobs:
           paths: sampledata/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 70
-          title: '## 🔬 sampledata - Coverage Report'
+          title: '## đŸ”¬ sampledata - Coverage Report'
 
       - name: Quality Gate (Console)
         run: |
@@ -81,7 +81,7 @@ jobs:
           paths: sampledata/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 70
-          title: '## 🔬 sampledata - Coverage Report'
+          title: '## đŸ”¬ sampledata - Coverage Report'
 
       - name: Upload Test & Coverage Artifacts
         uses: actions/upload-artifact@v4
@@ -112,7 +112,7 @@ jobs:
       - name: Setup Java/Maven
         uses: ./.github/workflows/actions
 
-      - name: Download Test & Coverage Artifacts (từ job test)
+      - name: Download Test & Coverage Artifacts (tá»« job test)
         uses: actions/download-artifact@v4
         with:
           name: sampledata-test-coverage-reports
@@ -135,8 +135,8 @@ jobs:
             -B --no-transfer-progress
 
   build:
-    needs: security
-    if: needs.detect-changes.outputs.service == 'true'
+    needs: [detect-changes, security]
+    if: needs.detect-changes.outputs.service == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -152,9 +152,23 @@ jobs:
         run: mvn clean package -pl sampledata -am -DskipTests
 
       - name: Build and push Docker image to Docker Hub
+        id: docker_build
         uses: ./.github/workflows/actions/docker-build-push
         with:
           context: ./sampledata
           image-name: yas-sampledata
           dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+
+
+      - name: Update image tag in GitOps repository
+        if: github.event_name != 'pull_request'
+        uses: ./.github/workflows/actions/gitops-update-image-tag
+        with:
+          image-name: yas-sampledata
+          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
+          image-tag: ${{ steps.docker_build.outputs.image_tag }}
+          source-branch: ${{ github.ref_name }}
+          gitops-repository: Duong-Dung/yas-gitops
+          gitops-branch: main
+          gitops-token: ${{ secrets.GITOPS_PAT }}
