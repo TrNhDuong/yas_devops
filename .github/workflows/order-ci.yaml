@@ -54,12 +54,12 @@ jobs:
               printf " ORDER SERVICE COVERAGE: %.2f%%\n", coverage
               printf "===========================================\n"
               if (coverage < 70) {
-                printf " FAILED: Coverage thấp hơn mức tối thiểu 70%%\n"
+                printf " FAILED: Coverage tháº¥p hÆ¡n má»©c tá»‘i thiá»ƒu 70%%\n"
                 exit 1
               }
             }' $REPORT_CSV
           else
-            echo "::error::Không tìm thấy file jacoco.csv. Kiểm tra cấu hình jacoco-maven-plugin!"
+            echo "::error::KhĂ´ng tĂ¬m tháº¥y file jacoco.csv. Kiá»ƒm tra cáº¥u hĂ¬nh jacoco-maven-plugin!"
             exit 1
           fi
 
@@ -70,7 +70,7 @@ jobs:
           paths: order/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 70
-          title: 'Báo cáo độ phủ - Order Service'
+          title: 'BĂ¡o cĂ¡o Ä‘á»™ phá»§ - Order Service'
           update-comment: true
 
       - name: Upload Test & Coverage Artifacts
@@ -125,8 +125,11 @@ jobs:
             -B --no-transfer-progress
 
   build:
+    concurrency:
+      group: gitops-update-main
+      cancel-in-progress: false
     needs: [detect-changes, security]
-    if: needs.detect-changes.outputs.service == 'true'
+    if: needs.detect-changes.outputs.service == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -142,9 +145,23 @@ jobs:
         run: mvn clean package -pl order -am -DskipTests
 
       - name: Build and push Docker image to Docker Hub
+        id: docker_build
         uses: ./.github/workflows/actions/docker-build-push
         with:
           context: ./order
           image-name: yas-order
           dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+
+
+      - name: Update image tag in GitOps repository
+        if: github.event_name != 'pull_request'
+        uses: ./.github/workflows/actions/gitops-update-image-tag
+        with:
+          image-name: yas-order
+          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
+          image-tag: ${{ steps.docker_build.outputs.image_tag }}
+          source-branch: ${{ github.ref_name }}
+          gitops-repository: Duong-Dung/yas-gitops
+          gitops-branch: main
+          gitops-token: ${{ secrets.GITOPS_PAT }}
